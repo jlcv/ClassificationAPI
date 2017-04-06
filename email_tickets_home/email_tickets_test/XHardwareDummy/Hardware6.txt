@@ -1,0 +1,10 @@
+joqui, necesito que se levante un ticket de instalación de hardware:
+
+Nombre: Arturo Fermín López de Haro
+IS: AFLH
+Teléfono: 0032
+Sitio: Guadalajara
+Área: IT
+Lugar: C4
+Propósito: Instalar trackpad nuevo
+Urgencia: 5

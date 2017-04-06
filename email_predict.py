@@ -682,14 +682,17 @@ def predict(clf, X_train, X_test, y_train, y_test, email_body):
         u'Hola buen dia, Quisiera hacer una peticion para respaldar la informacion en mi computadora.'
     ]
 
-    # texts = scaler.transform(texts)
+    texts = np.array(texts).reshape((1, -1))
+
 
     predicted = clf.predict(texts)
-
-    # prediction_string = ''
+    prediction_string = ''
 
     # for t, p in zip(texts, predicted):
     #     prediction_string = '%s is %s' % (t, dataset.target_names[p])
+
+    # print(prediction_string)
+    # print("Something")
 
     return "something"
 
