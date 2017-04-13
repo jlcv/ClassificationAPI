@@ -22,6 +22,7 @@ import shutil
 import re
 import codecs
 import numbers
+import json
 from string import punctuation
 
 import nltk
@@ -580,17 +581,9 @@ def size_mb(docs):
     return sum(len(s.encode('utf-8')) for s in docs) / 1e6
 
 
-def get_training_results():
+def get_training_results(categories=[]):
     ###############################################################################
     # Load some categories from the training set
-    categories = [
-                       'ZInstalacionHardware',
-                       'ZInstalacionSoftware',
-                       'ZRespaldo',
-                       'ZConfiguracionOutlook',
-                       'ZAsignacionComputadora' ]
-        
-
     # if opts.filtered:
     #     remove = ('headers', 'footers', 'quotes')
     # else:
@@ -662,12 +655,13 @@ def get_training_results():
     if feature_names:
         feature_names = np.asarray(feature_names)
 
-    results = []
 
-    results.append(benchmark(MultinomialNB(alpha=.01), X_train, X_test, y_train, y_test))
-    results.append(benchmark(BernoulliNB(alpha=.01), X_train, X_test, y_train, y_test))
+    results_data = {}
+    results_data['multinomial_nb'] = benchmark(MultinomialNB(alpha=.01), X_train, X_test, y_train, y_test)[1]
+    results_data['bernoulli_nb'] = benchmark(BernoulliNB(alpha=.01), X_train, X_test, y_train, y_test)[1]
+    json_data = json.dumps(results_data)
 
-    return ""+str(results)
+    return json_data
 
 
 ###############################################################################

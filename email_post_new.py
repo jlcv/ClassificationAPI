@@ -55,7 +55,7 @@ CACHE_NAME = "email_tickets.pkz"
 TEMP_FOLDER = "email_tickets_temp"
 TRAIN_FOLDER = "email_tickets_train"
 TEST_FOLDER = "email_tickets_test"
-HOME_FOLDER = "email_classification_home"
+HOME_FOLDER = "email_tickets_home"
 
 tasks = [
     {
@@ -79,11 +79,14 @@ sys.setdefaultencoding('UTF8')
 def get_dummy():
     return tasks
 
-def post_email(email_body=""):
+def post_email(email_body="", category="None"):
     filepath = os.path.join(get_data_home(), HOME_FOLDER)
     if not os.path.isdir(filepath):
         os.makedirs(filepath)
     filepath = os.path.join(filepath, TEMP_FOLDER)
+    if not os.path.isdir(filepath):
+        os.makedirs(filepath)
+    filepath = os.path.join(filepath, category)
     if not os.path.isdir(filepath):
         os.makedirs(filepath)
     i = 0

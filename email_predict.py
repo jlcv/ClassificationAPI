@@ -22,6 +22,7 @@ import shutil
 import re
 import codecs
 import numbers
+import json
 from string import punctuation
 
 import nltk
@@ -30,11 +31,14 @@ from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
 
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_selection import SelectFromModel
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.linear_model import RidgeClassifier
 from sklearn.pipeline import Pipeline
+from sklearn.datasets import load_files
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import Perceptron
@@ -56,6 +60,9 @@ ARCHIVE_NAME = "email_tickets.tar.gz"
 CACHE_NAME = "email_tickets.pkz"
 TRAIN_FOLDER = "email_tickets_train"
 TEST_FOLDER = "email_tickets_test"
+
+cache = None
+target_names = []
 
 def check_random_state(seed):
     """Turn seed into a np.random.RandomState instance
@@ -119,145 +126,6 @@ class Bunch(dict):
         # Overriding __setstate__ to be a noop has the effect of
         # ignoring the pickled __dict__
         pass
-
-def load_files(container_path, description=None, categories=None,
-               load_content=True, shuffle=True, encoding=None,
-               decode_error='strict', random_state=0):
-    """Load text files with categories as subfolder names.
-
-    Individual samples are assumed to be files stored a two levels folder
-    structure such as the following:
-
-        container_folder/
-            category_1_folder/
-                file_1.txt
-                file_2.txt
-                ...
-                file_42.txt
-            category_2_folder/
-                file_43.txt
-                file_44.txt
-                ...
-
-    The folder names are used as supervised signal label names. The
-    individual file names are not important.
-
-    This function does not try to extract features into a numpy array or
-    scipy sparse matrix. In addition, if load_content is false it
-    does not try to load the files in memory.
-
-    To use text files in a scikit-learn classification or clustering
-    algorithm, you will need to use the `sklearn.feature_extraction.text`
-    module to build a feature extraction transformer that suits your
-    problem.
-
-    If you set load_content=True, you should also specify the encoding of
-    the text using the 'encoding' parameter. For many modern text files,
-    'utf-8' will be the correct encoding. If you leave encoding equal to None,
-    then the content will be made of bytes instead of Unicode, and you will
-    not be able to use most functions in `sklearn.feature_extraction.text`.
-
-    Similar feature extractors should be built for other kind of unstructured
-    data input such as images, audio, video, ...
-
-    Read more in the :ref:`User Guide <datasets>`.
-
-    Parameters
-    ----------
-    container_path : string or unicode
-        Path to the main folder holding one subfolder per category
-
-    description : string or unicode, optional (default=None)
-        A paragraph describing the characteristic of the dataset: its source,
-        reference, etc.
-
-    categories : A collection of strings or None, optional (default=None)
-        If None (default), load all the categories.
-        If not None, list of category names to load (other categories ignored).
-
-    load_content : boolean, optional (default=True)
-        Whether to load or not the content of the different files. If
-        true a 'data' attribute containing the text information is present
-        in the data structure returned. If not, a filenames attribute
-        gives the path to the files.
-
-    encoding : string or None (default is None)
-        If None, do not try to decode the content of the files (e.g. for
-        images or other non-text content).
-        If not None, encoding to use to decode text files to Unicode if
-        load_content is True.
-
-    decode_error : {'strict', 'ignore', 'replace'}, optional
-        Instruction on what to do if a byte sequence is given to analyze that
-        contains characters not of the given `encoding`. Passed as keyword
-        argument 'errors' to bytes.decode.
-
-    shuffle : bool, optional (default=True)
-        Whether or not to shuffle the data: might be important for models that
-        make the assumption that the samples are independent and identically
-        distributed (i.i.d.), such as stochastic gradient descent.
-
-    random_state : int, RandomState instance or None, optional (default=0)
-        If int, random_state is the seed used by the random number generator;
-        If RandomState instance, random_state is the random number generator;
-        If None, the random number generator is the RandomState instance used
-        by `np.random`.
-
-    Returns
-    -------
-    data : Bunch
-        Dictionary-like object, the interesting attributes are: either
-        data, the raw text data to learn, or 'filenames', the files
-        holding it, 'target', the classification labels (integer index),
-        'target_names', the meaning of the labels, and 'DESCR', the full
-        description of the dataset.
-    """
-    target = []
-    target_names = []
-    filenames = []
-
-    folders = [f for f in sorted(listdir(container_path))
-               if isdir(join(container_path, f))]
-
-    if categories is not None:
-        folders = [f for f in folders if f in categories]
-
-    for label, folder in enumerate(folders):
-        target_names.append(folder)
-        folder_path = join(container_path, folder)
-        documents = [join(folder_path, d)
-                     for d in sorted(listdir(folder_path))]
-        target.extend(len(documents) * [label])
-        filenames.extend(documents)
-
-    # convert to array for fancy indexing
-    filenames = np.array(filenames)
-    target = np.array(target)
-
-    if shuffle:
-        random_state = check_random_state(random_state)
-        indices = np.arange(filenames.shape[0])
-        random_state.shuffle(indices)
-        filenames = filenames[indices]
-        target = target[indices]
-
-    if load_content:
-        data = []
-        for filename in filenames:
-            with open(filename, 'rb') as f:
-                data.append(f.read())
-        if encoding is not None:
-            data = [d.decode(encoding, decode_error) for d in data]
-        return Bunch(data=data,
-                     filenames=filenames,
-                     target_names=target_names,
-                     target=target,
-                     DESCR=description)
-
-    return Bunch(filenames=filenames,
-                 target_names=target_names,
-                 target=target,
-                 DESCR=description)
 
 
 def download_email_tickets(target_dir, cache_path):
@@ -383,7 +251,7 @@ def fetch_email_tickets(data_home=None, subset='train', categories=None,
     print(data_home)
     print(cache_path)
     print(email_tickets_home)
-    cache = None
+    
     if os.path.exists(cache_path):
         try:
             with open(cache_path, 'rb') as f:
@@ -547,7 +415,8 @@ def fetch_email_tickets_vectorized(subset="train", data_home=None):
         non_words.extend(['¿', '¡'])  
         non_words.extend(map(str,range(10)))
         spanish_stopwords = stopwords.words('spanish')
-        vectorizer = CountVectorizer(dtype=np.int16, lowercase=True, stop_words=spanish_stopwords, strip_accents=unicode)#(dtype=np.int16, stop_words=spanish_stopwords, lowercase=True, strip_accents=unicode, tokenizer=tokenize,)
+        vectorizer = CountVectorizer(dtype=np.int16, lowercase=True, stop_words=spanish_stopwords, strip_accents=unicode)
+        vectorizer._validate_vocabulary()
         X_train = vectorizer.fit_transform(data_train.data).tocsr()
         X_test = vectorizer.transform(data_test.data).tocsr()
         joblib.dump((X_train, X_test), target_file, compress=9)
@@ -559,7 +428,7 @@ def fetch_email_tickets_vectorized(subset="train", data_home=None):
     normalize(X_train, copy=False)
     normalize(X_test, copy=False)
 
-    target_names = data_train.target_names
+    target_names.extend(data_train.target_names)
 
     if subset == "train":
         data = X_train
@@ -580,17 +449,9 @@ def size_mb(docs):
     return sum(len(s.encode('utf-8')) for s in docs) / 1e6
 
 
-def post_prediction(email_body=""):
+def post_prediction(email_body="", categories=[]):
     ###############################################################################
     # Load some categories from the training set
-    categories = [
-                       'ZInstalacionHardware',
-                       'ZInstalacionSoftware',
-                       'ZRespaldo',
-                       'ZConfiguracionOutlook',
-                       'ZAsignacionComputadora' ]
-        
-
     # if opts.filtered:
     #     remove = ('headers', 'footers', 'quotes')
     # else:
@@ -603,7 +464,7 @@ def post_prediction(email_body=""):
                                    shuffle=True, random_state=42)
 
     # order of labels in `target_names` can be different from `categories`
-    target_names = data_train.target_names
+    target_names.extend(data_train.target_names)
 
     # split a training set and a test set
     y_train, y_test = data_train.target, data_test.target
@@ -646,15 +507,15 @@ def post_prediction(email_body=""):
             ''
             ])
 
-    vectorizer = HashingVectorizer(stop_words=stopwords_list, non_negative=True,
-                                        strip_accents=unicode)
-    X_train = vectorizer.transform(data_train.data)
+    # vectorizer = CountVectorizer(stop_words=stopwords_list,
+    #                                     strip_accents=unicode)
+    # X_train = vectorizer.fit_transform(data_train.data)
 
-    duration = time() - t0
+    # duration = time() - t0
 
-    t0 = time()
-    X_test = vectorizer.transform(data_test.data)
-    duration = time() - t0
+    # t0 = time()
+    # X_test = vectorizer.transform(data_test.data)
+    # duration = time() - t0
 
     # mapping from integer feature name to original token string
     feature_names = None
@@ -662,39 +523,36 @@ def post_prediction(email_body=""):
     if feature_names:
         feature_names = np.asarray(feature_names)
 
-    results = []
+    prediction_data = {}
+    prediction_data['text'] = email_body
+    prediction_data['multinomial_nb'] = predict(MultinomialNB(), data_train.data, data_test.data, y_train, y_test, email_body)
+    prediction_data['bernoulli_nb'] = predict(BernoulliNB(), data_train.data, data_test.data, y_train, y_test, email_body)
+    json_data = json.dumps(prediction_data)
 
-    results.append(predict(MultinomialNB(alpha=.01), X_train, X_test, y_train, y_test, email_body))
-    results.append(predict(BernoulliNB(alpha=.01), X_train, X_test, y_train, y_test, email_body))
-
-    return ""+str(results)
+    return json_data
 
 
 ###############################################################################
 # Predict classifiers
 def predict(clf, X_train, X_test, y_train, y_test, email_body):
     t0 = time()
-    clf.fit(X_train, y_train)
+    text_clf = Pipeline([('vect', CountVectorizer()),
+        ('tfidf', TfidfTransformer()),
+        ('clf', clf)])
+    text_clf.fit(X_train, y_train)
     train_time = time() - t0
     
     texts = [
-        # u'%s' % (email_body)
-        u'Hola buen dia, Quisiera hacer una peticion para respaldar la informacion en mi computadora.'
+        u'%s' % (email_body)
     ]
 
-    texts = np.array(texts).reshape((1, -1))
-
-
-    predicted = clf.predict(texts)
+    predicted = text_clf.predict(texts)
     prediction_string = ''
 
-    # for t, p in zip(texts, predicted):
-    #     prediction_string = '%s is %s' % (t, dataset.target_names[p])
+    for t, p in zip(texts, predicted):
+        prediction_string = '%s' % (target_names[p])
 
-    # print(prediction_string)
-    # print("Something")
-
-    return "something"
+    return prediction_string
 
 
 
