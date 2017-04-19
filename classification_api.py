@@ -1,7 +1,7 @@
 #!flask/bin/python
 from flask import Flask, jsonify, request
 import json
-from email_post_new import post_email
+from email_post_new import post_new_email
 from email_training import get_training_results
 from email_predict import post_prediction
 
@@ -21,7 +21,7 @@ def get_tasks():
 def post_email():
     try:
         data = request.json
-        return jsonify({'success': post_email(email_body=data['email_body'], category=data['category'])})
+        return jsonify({'success': post_new_email(email_body=data['email_body'], category=data['category'])})
     except Exception, e:
         return jsonify({'error': str(e)}), 400
 

@@ -49,6 +49,7 @@ from urllib2 import urlopen
 from os.path import isdir
 
 from flask import Flask, jsonify
+from random import randint
 
 ARCHIVE_NAME = "email_tickets.tar.gz"
 CACHE_NAME = "email_tickets.pkz"
@@ -79,7 +80,12 @@ sys.setdefaultencoding('UTF8')
 def get_dummy():
     return tasks
 
-def post_email(email_body="", category="None"):
+def post_new_email(email_body="", category="None"):
+    randomValue = randint(0,3)
+    if randomValue == 0:
+        TEMP_FOLDER = TEST_FOLDER
+    else:
+        TEMP_FOLDER = TRAIN_FOLDER
     filepath = os.path.join(get_data_home(), HOME_FOLDER)
     if not os.path.isdir(filepath):
         os.makedirs(filepath)
@@ -90,9 +96,9 @@ def post_email(email_body="", category="None"):
     if not os.path.isdir(filepath):
         os.makedirs(filepath)
     i = 0
-    while os.path.exists(filepath + "/temporal%s" % i):
+    while os.path.exists(filepath + "/custom%s" % i):
         i += 1
-    with open(os.path.join(filepath, "temporal%s" % i), "a") as f:
+    with open(os.path.join(filepath, "custom%s" % i), "a") as f:
         f.write(email_body)
     return "true"
 
