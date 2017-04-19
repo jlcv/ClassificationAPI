@@ -13,3 +13,4 @@ WORKDIR /opt/webapp
 RUN conda install scikit-learn
 
 CMD gunicorn --bind 0.0.0.0:$PORT wsgi
+CMD python classification_api.py
