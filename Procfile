@@ -1,1 +1,1 @@
-web: gunicorn classification_api.wsgi --log-file -
+web: gunicorn classification_api:application --log-file -
