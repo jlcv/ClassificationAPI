@@ -12,4 +12,4 @@ WORKDIR /opt/webapp
 
 RUN conda install scikit-learn
 
-CMD gunicorn --bind 0.0.0.0:$PORT classification_api
+CMD gunicorn --bind 127.0.0.1 classification_api
