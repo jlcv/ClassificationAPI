@@ -1,1 +1,1 @@
-web: gunicorn classification_api.py:application --log-file -
+web: gunicorn classification-api:application --log-file -
