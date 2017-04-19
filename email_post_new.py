@@ -8,7 +8,6 @@ import numpy as np
 from optparse import OptionParser
 import sys
 from time import time
-import matplotlib.pyplot as plt
 import os
 from os import environ
 from os.path import expanduser
