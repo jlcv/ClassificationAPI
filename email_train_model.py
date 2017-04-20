@@ -634,11 +634,11 @@ if opts.all_categories:
     categories = None
 else:
     categories = [
-                   'ZInstalacionHardware',
-                   'ZInstalacionSoftware',
-                   'ZRespaldo',
-                   'ZConfiguracionOutlook',
-                   'ZAsignacionComputadora' ]
+                   'InstalacionHardware',
+                   'InstalacionSoftware',
+                   'Respaldo',
+                   'ConfiguracionOutlook',
+                   'AsignacionComputadora' ]
 
 # if opts.filtered:
 #     remove = ('headers', 'footers', 'quotes')
