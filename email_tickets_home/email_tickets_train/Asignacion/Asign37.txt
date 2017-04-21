@@ -1,0 +1,17 @@
+Hola Joqui
+
+Por favor tu apoyo para revisar asignaciones de estas personas que siguen sin quedar:
+
+No. SAP	Nombre	IS	IP	Fecha Inicio	Fecha Final
+20022443	Adriana Fabiola Martinez Garcia	AMNG	9592	01/12/2016	31/12/2016
+20005473	Alvaro Gaytan Meza	AGMZ	13853	01/12/2016	31/12/2016
+20027447	Arturo Ocampo Noveron	ARON	7784	01/12/2016	31/12/2016
+20000624	Claudia Montes de Oca Mancilla	CMM2	9592 / 9571	01/12/2016	31/12/2016
+20017126	Ezequiel Villanueva Nicolás	EZVM	7784	01/12/2016	13/12/2016
+20029711	Jesus Iván Buendía Castillo	JSBC	13296	04/11/2016	31/12/2016
+20021036	Jose Manuel Pulido Becerril	JMPB	9592	01/10/2016	31/12/2016
+20011362	Yazmin Rojas García	YZRG	9592	01/12/2016	31/12/2016
+20030816	Jose Ignacio Torres Cuadros	JTCD	13853	01/12/2016	31/12/2016
+20009919	Sergio Tellez Batalla	SETB	7784	13-012	31/12/2016
+
+Saludos,

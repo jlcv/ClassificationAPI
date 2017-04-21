@@ -1,0 +1,9 @@
+Yareli
+
+Apóyame también con esta asignación…
+
+Employee	Employee	IS 	WBS	Fecha de Inicio	Fecha Fin	% Asignación	Infraestructura	Ticket
+20014206	Anthony Julian Amador Loera	AJAL	1-0000004441-1 BTS - Development and Maintenance	22-dic-16	31-ene-17	100%	GDC	 
+
+
+Saludos!

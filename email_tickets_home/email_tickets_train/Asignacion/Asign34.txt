@@ -1,0 +1,17 @@
+Joqui, tu apoyo por favor asignar:
+
+1-0000009592
+No. SAP	Nombre	IS
+20017471	Angelica Irais Beltran Lara 	AIBL
+20011888	Luis Felipe Guerrero Contreras	LFGC
+20025168	Raul Ramos Suberza 	RURS
+
+
+1-0000007784
+No. SAP	Nombre	IS
+20003493	Elizabeth Ruiz Cruz	ELRC
+20006415	Gustavo Alberto Lortia Rosas	GALR
+20020242	Jazeel Raúl Ortega González	JOG
+20029811	Laura Rojas Martínez	LRJM
+
+

@@ -1,0 +1,10 @@
+Hola Joq:
+
+Me ayudas a levantar los tickets de asignación correspondientes por favor.
+
+Colaborador	IS	Proyecto	Porcentaje asignación	Fecha de Inicio	Fecha de Fin
+Oscar Alejandro Lopez Meléndez	OALM	1-0000013209	100%	07-12-16	Fin de proyecto
+Dulce Anel Calixto Hernandez	DAHC	1-0000013209	100%	08-12-16	Fin de proyecto
+
+
+De antemano gracias.

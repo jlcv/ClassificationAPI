@@ -1,0 +1,11 @@
+Hola Joq:
+
+Me ayudas a asignar a los siguientes colaboradores por favor.
+
+Colaborador	IS	Proyecto	Porcentaje asignación	Fecha Inicio	Fecha Fin
+Elias Hernandez Perez	ELHP	1-0000010938	100%	01-02-17	Fin de Proyecto
+Alejandro Mejia Perez	AOMP	1-0000010938	100%	01-02-17	Fin de Proyecto
+
+De antemano gracias.
+
+Saludos.

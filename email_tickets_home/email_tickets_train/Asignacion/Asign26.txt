@@ -1,0 +1,10 @@
+Hola Joq:
+
+Me ayudas a levantar ticket de asignación del siguiente colaborador por favor.
+
+Colaborador	IS	Proyecto	Porcentaje de asignación	Fecha de Inicio	Fecha de Fin
+Fernando Miguel Deloya Cruz	FMDC	1-0000013209	100%	03-ene-2017	Fin de proyecto
+
+De antemano gracias.
+
+Saludos.
