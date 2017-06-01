@@ -30,14 +30,11 @@ from nltk.corpus import stopwords
 from nltk.stem.snowball import SnowballStemmer
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.feature_selection import SelectFromModel
 from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.linear_model import RidgeClassifier
 from sklearn.pipeline import Pipeline
-from sklearn.datasets import load_files
 from sklearn.svm import LinearSVC
 from sklearn.linear_model import SGDClassifier
 from sklearn.linear_model import Perceptron
@@ -54,13 +51,10 @@ from os.path import isdir
 reload(sys)
 sys.setdefaultencoding('UTF8')
 
-ARCHIVE_NAME = "values.tar.gz"
-CACHE_NAME = "values.pkz"
+ARCHIVE_NAME = "values_testing.tar.gz"
+CACHE_NAME = "values_testing.pkz"
 TRAIN_FOLDER = "values_train"
 TEST_FOLDER = "values_test"
-
-cache = None
-target_names = []
 
 def check_random_state(seed):
     if seed is None or seed is np.random:
@@ -92,6 +86,55 @@ class Bunch(dict):
     def __setstate__(self, state):
         pass
 
+def load_files(container_path, description=None, categories=None,
+               load_content=True, shuffle=True, encoding=None,
+               decode_error='strict', random_state=0):
+    target = []
+    target_names = []
+    filenames = []
+
+    folders = [f for f in sorted(listdir(container_path))
+               if isdir(join(container_path, f))]
+
+    if categories is not None:
+        folders = [f for f in folders if f in categories]
+
+    for label, folder in enumerate(folders):
+        target_names.append(folder)
+        folder_path = join(container_path, folder)
+        documents = [join(folder_path, d)
+                     for d in sorted(listdir(folder_path))]
+        target.extend(len(documents) * [label])
+        filenames.extend(documents)
+
+    filenames = np.array(filenames)
+    target = np.array(target)
+
+    if shuffle:
+        random_state = check_random_state(random_state)
+        indices = np.arange(filenames.shape[0])
+        random_state.shuffle(indices)
+        filenames = filenames[indices]
+        target = target[indices]
+
+    if load_content:
+        data = []
+        for filename in filenames:
+            with open(filename, 'rb') as f:
+                data.append(f.read())
+        if encoding is not None:
+            data = [d.decode(encoding, decode_error) for d in data]
+        return Bunch(data=data,
+                     filenames=filenames,
+                     target_names=target_names,
+                     target=target,
+                     DESCR=description)
+
+    return Bunch(filenames=filenames,
+                 target_names=target_names,
+                 target=target,
+                 DESCR=description)
+
 
 def download_values(target_dir, cache_path):
     archive_path = os.path.join(target_dir, ARCHIVE_NAME)
@@ -110,13 +153,13 @@ def download_values(target_dir, cache_path):
 
     return cache
 
-def get_data_home(data_home=None, project_name=None):
+def get_data_home(data_home=None, project_name=""):
     if data_home is None:
         data_home = os.path.dirname(os.path.abspath(__file__))
     data_home = expanduser(data_home)
-    data_home = os.path.join(target_dir, project_name)
+    data_home = os.path.join(data_home, project_name)
     if not exists(data_home):
-        makedirs(data_home)
+        os.makedirs(data_home)
     return data_home
 
 
@@ -129,37 +172,21 @@ def _pkl_filepath(*args, **kwargs):
     return join(*new_args)
 
 
-def fetch_values(data_home=None, subset='train', categories=None,
-                       project_name="",
+def fetch_values(data_home=None, subset='train', project_name="", categories=None,
                        shuffle=True, random_state=42,
                        download_if_missing=True):
 
-    data_home = get_data_home(data_home=data_home)
+    data_home = get_data_home(data_home=data_home, project_name=project_name)
     cache_path = _pkl_filepath(data_home, CACHE_NAME)
-    values_home = os.path.join(data_home, project_name)
     print(data_home)
     print(cache_path)
-    print(values_home)
-    
-    if os.path.exists(cache_path):
-        try:
-            with open(cache_path, 'rb') as f:
-                compressed_content = f.read()
-            uncompressed_content = codecs.decode(
-                compressed_content, 'zlib_codec')
-            cache = pickle.loads(uncompressed_content)
-        except Exception as e:
-            print(80 * '_')
-            print('Cache loading failed')
-            print(80 * '_')
-            print(e)
+    cache = None
 
-    if cache is None:
-        if download_if_missing:
-            cache = download_values(target_dir=values_home,
+    if download_if_missing:
+            cache = download_values(target_dir=data_home,
                                           cache_path=cache_path)
-        else:
-            raise IOError('Values dataset not found')
+    else:
+        raise IOError('Values dataset not found')
 
     if subset in ('train', 'test'):
         data = cache[subset]
@@ -225,71 +252,19 @@ def tokenize(text):
         stems = ['']
     return stems
 
-def fetch_values_vectorized(subset="train", data_home=None):
-    data_home = get_data_home(data_home=data_home)
-    filebase = 'values_vectorized'
-    target_file = _pkl_filepath(data_home, filebase + ".pkl")
-
-    data_train = fetch_values(data_home=data_home,
-                                    subset='train',
-                                    categories=None,
-                                    shuffle=True,
-                                    random_state=12)
-
-    data_test = fetch_values(data_home=data_home,
-                                   subset='test',
-                                   categories=None,
-                                   shuffle=True,
-                                   random_state=12)
-
-    if os.path.exists(target_file):
-        X_train, X_test = joblib.load(target_file)
-    else:
-        spanish_stemmer = SnowballStemmer('spanish')
-        non_words = list(punctuation)  
-        non_words.extend(['¿', '¡'])  
-        non_words.extend(map(str,range(10)))
-        spanish_stopwords = stopwords.words('spanish')
-        vectorizer = CountVectorizer(dtype=np.int16, lowercase=True, stop_words=spanish_stopwords, strip_accents=unicode)
-        vectorizer._validate_vocabulary()
-        X_train = vectorizer.fit_transform(data_train.data).tocsr()
-        X_test = vectorizer.transform(data_test.data).tocsr()
-        joblib.dump((X_train, X_test), target_file, compress=9)
-
-    X_train = X_train.astype(np.float64)
-    X_test = X_test.astype(np.float64)
-    normalize(X_train, copy=False)
-    normalize(X_test, copy=False)
-
-    target_names.extend(data_train.target_names)
-
-    if subset == "train":
-        data = X_train
-        target = data_train.target
-    elif subset == "test":
-        data = X_test
-        target = data_test.target
-    elif subset == "all":
-        data = sp.vstack((X_train, X_test)).tocsr()
-        target = np.concatenate((data_train.target, data_test.target))
-    else:
-        raise ValueError("%r is not a valid subset: should be one of "
-                         "['train', 'test', 'all']" % subset)
-
-    return Bunch(data=data, target=target, target_names=target_names)
-
 def size_mb(docs):
     return sum(len(s.encode('utf-8')) for s in docs) / 1e6
 
 
-def post_prediction(body="", categories=None, project_name=""):
-    data_train = fetch_values(subset='train',
+def get_testing_results(categories=None, project_name=""):
+
+    data_train = fetch_values(subset='train', categories=categories, project_name=project_name,
                                     shuffle=True, random_state=42)
 
-    data_test = fetch_values(subset='test',
+    data_test = fetch_values(subset='test', categories=categories, project_name=project_name,
                                    shuffle=True, random_state=42)
 
-    target_names.extend(data_train.target_names)
+    target_names = data_train.target_names
 
     y_train, y_test = data_train.target, data_test.target
 
@@ -331,38 +306,41 @@ def post_prediction(body="", categories=None, project_name=""):
             ''
             ])
 
+    vectorizer = HashingVectorizer(stop_words=stopwords_list, non_negative=True,
+                                        strip_accents=unicode)
+    X_train = vectorizer.transform(data_train.data)
+
+    duration = time() - t0
+
+    t0 = time()
+    X_test = vectorizer.transform(data_test.data)
+    duration = time() - t0
+
     feature_names = None
 
     if feature_names:
         feature_names = np.asarray(feature_names)
 
-    prediction_data = {}
-    prediction_data['text'] = body
-    prediction_data['multinomial_nb'] = predict(MultinomialNB(), data_train.data, data_test.data, y_train, y_test, body)
-    prediction_data['bernoulli_nb'] = predict(BernoulliNB(), data_train.data, data_test.data, y_train, y_test, body)
-    json_data = json.dumps(prediction_data)
+
+    results_data = {}
+    results_data['multinomial_nb'] = benchmark(MultinomialNB(alpha=.01), X_train, X_test, y_train, y_test)[1]
+    results_data['bernoulli_nb'] = benchmark(BernoulliNB(alpha=.01), X_train, X_test, y_train, y_test)[1]
+    json_data = json.dumps(results_data)
 
     return json_data
 
-def predict(clf, X_train, X_test, y_train, y_test, body):
+def benchmark(clf, X_train, X_test, y_train, y_test):
     t0 = time()
-    text_clf = Pipeline([('vect', CountVectorizer()),
-        ('tfidf', TfidfTransformer()),
-        ('clf', clf)])
-    text_clf.fit(X_train, y_train)
+    clf.fit(X_train, y_train)
     train_time = time() - t0
     
-    texts = [
-        u'%s' % (body)
-    ]
+    t0 = time()
+    pred = clf.predict(X_test)
+    test_time = time() - t0
+    score = metrics.accuracy_score(y_test, pred)
 
-    predicted = text_clf.predict(texts)
-    prediction_string = ''
-
-    for t, p in zip(texts, predicted):
-        prediction_string = '%s' % (target_names[p])
-
-    return prediction_string
+    clf_descr = str(clf).split('(')[0]
+    return clf_descr, score, train_time, test_time
 
 
 

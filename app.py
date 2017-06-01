@@ -1,9 +1,10 @@
 #!flask/bin/python
 from flask import Flask, jsonify, request
 import json
-from email_post_new import post_new_email
-from email_training import get_training_results
-from email_predict import post_prediction
+from post_new import post_new_value
+from training import get_training_results
+from testing import get_testing_results
+from predict import post_prediction
 
 app = Flask(__name__)
 
@@ -18,33 +19,44 @@ def check_api_key(obtained_api_key):
     
 
 @app.route(base_api + '/predict', methods=['POST'])
-def get_tasks():
+def post_predict():
     if check_api_key(obtained_api_key=request.headers.get('X-Api-Key')):
         try:
             data = request.json
-            return jsonify({'success': True, 'prediction': json.loads(post_prediction(email_body=data['email_body'], categories=data['categories']))})
+            return jsonify({'success': True, 'prediction': json.loads(post_prediction(body=data['body'], project_name=data['project_name']))})
         except Exception, e:
             return jsonify({'error': str(e)}), 400
     else:
         return jsonify({'error': 'Unrecognized Api Key'}), 400
 
-@app.route(base_api + '/new/email', methods=['POST'])
-def post_email():
+@app.route(base_api + '/new', methods=['POST'])
+def post_new():
     if check_api_key(obtained_api_key=request.headers.get('X-Api-Key')):
         try:
             data = request.json
-            return jsonify({'success': post_new_email(email_body=data['email_body'], category=data['category'])})
+            return jsonify({'success': post_new_value(values=data['values'], category=data['category'], project_name=data['project_name']), 'result': json.loads(get_training_results(project_name=data['project_name']))})
         except Exception, e:
             return jsonify({'error': str(e)}), 400
     else:
         return jsonify({'error': 'Unrecognized Api Key'}), 400
 
 @app.route(base_api + '/testing', methods=['POST'])
-def get_test_results():
+def post_test_results():
     if check_api_key(obtained_api_key=request.headers.get('X-Api-Key')):
         try:
             data = request.json
-            return jsonify({'success': True, 'result': json.loads(get_training_results(categories=data['categories']))})
+            return jsonify({'success': True, 'result': json.loads(get_testing_results(project_name=data['project_name']))})
+        except Exception, e:
+            return jsonify({'error': str(e)}), 400
+    else:
+        return jsonify({'error': 'Unrecognized Api Key'}), 400
+
+@app.route(base_api + '/training', methods=['POST'])
+def post_train_results():
+    if check_api_key(obtained_api_key=request.headers.get('X-Api-Key')):
+        try:
+            data = request.json
+            return jsonify({'success': True, 'result': json.loads(get_training_results(project_name=data['project_name']))})
         except Exception, e:
             return jsonify({'error': str(e)}), 400
     else:

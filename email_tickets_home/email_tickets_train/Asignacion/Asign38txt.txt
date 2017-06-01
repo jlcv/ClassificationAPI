@@ -1,8 +1,0 @@
-Hola Joqui,
-
-Por favor tu apoyo para la asignación de estas personas, a partir del 3-noviembre
-
-No. SAP	Nombre	IS	IP
-20005473	Alvaro Gaytan Meza	AGMZ	1-0000013853
-20002668	Maribel Reyes Isidro	MRI	1-0000013853
-20025169	Mauricio Moreno Acevedo	MUMO	1-0000013853
